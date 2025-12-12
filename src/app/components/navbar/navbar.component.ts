@@ -1,6 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink, Router } from '@angular/router';
+import { RouterLink, Router } from '@angular/router'; // Asegúrate de importar Router
 import { StoreService } from '../../services/store.service';
 import { AuthService } from '../../services/auth.service';
 
@@ -13,7 +13,12 @@ import { AuthService } from '../../services/auth.service';
       <div class="container-fluid px-4">
         
         <div class="d-flex align-items-center gap-3">
-             <button class="btn btn-outline-dark border-0" type="button" data-bs-toggle="offcanvas" data-bs-target="#menuFalabella">
+             
+             <button *ngIf="!router.url.includes('/admin')" 
+                     class="btn btn-outline-dark border-0" 
+                     type="button" 
+                     data-bs-toggle="offcanvas" 
+                     data-bs-target="#menuFalabella">
                <i class="bi bi-list fs-4"></i>
              </button>
              
@@ -22,7 +27,7 @@ import { AuthService } from '../../services/auth.service';
              </a>
         </div>
 
-        <div class="flex-grow-1 px-3 d-none d-md-block">
+        <div class="flex-grow-1 px-3 d-none d-md-block" *ngIf="router.url === '/'">
           <div class="input-group">
             <input type="text" 
                    class="form-control rounded-pill border-end-0 ps-4 bg-light" 
@@ -46,7 +51,6 @@ import { AuthService } from '../../services/auth.service';
 
           <div *ngIf="authService.currentUserProfile()" class="d-none d-lg-flex flex-column align-items-center small cursor-pointer dropdown">
             <span class="text-muted">Hola,</span>
-            
             <span class="fw-bold text-success dropdown-toggle" data-bs-toggle="dropdown">
               {{ obtenerNombreBonito() }}
             </span>
@@ -62,8 +66,11 @@ import { AuthService } from '../../services/auth.service';
               </li>
 
               <li><a class="dropdown-item" routerLink="/perfil">Mi Perfil</a></li>
-              
-              <li><a class="dropdown-item" href="#">Mis Compras</a></li>
+              <li>
+  <a class="dropdown-item" routerLink="/mis-compras">
+    <i class="bi bi-bag me-2"></i>Mis Compras
+  </a>
+</li>
               <li><hr class="dropdown-divider"></li>
               <li>
                 <button class="dropdown-item text-danger fw-bold" (click)="logout()">
@@ -101,7 +108,7 @@ import { AuthService } from '../../services/auth.service';
 export class NavbarComponent {
   storeService = inject(StoreService);
   authService = inject(AuthService);
-  router = inject(Router);
+  public router = inject(Router); // <--- DEBE SER PUBLIC PARA USARLO EN EL HTML
 
   buscar(event: any) {
     this.storeService.buscarProducto(event.target.value);

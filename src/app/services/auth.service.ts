@@ -1,9 +1,9 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { Auth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, user, User } from '@angular/fire/auth';
-import { Firestore, doc, setDoc, getDoc } from '@angular/fire/firestore';
-import { Subscription } from 'rxjs';
-import { PerfilUsuario } from '../models/user.model'; // Asegúrate de tener este modelo creado
-import { updateDoc } from '@angular/fire/firestore';
+// CORRECCIÓN AQUÍ: Agregamos 'addDoc' a la lista de imports
+import { Firestore, doc, setDoc, getDoc, collection, collectionData, updateDoc, deleteDoc, addDoc } from '@angular/fire/firestore';
+import { Subscription, Observable } from 'rxjs';
+import { PerfilUsuario } from '../models/user.model';
 
 @Injectable({
   providedIn: 'root'
@@ -15,7 +15,7 @@ export class AuthService {
   // Señal técnica (Firebase Auth)
   currentUser = signal<User | null>(null);
   
-  // NUEVA SEÑAL: Datos reales del usuario (Nombre, Apellido, Rol...)
+  // Datos reales del usuario (Nombre, Apellido, Rol...)
   currentUserProfile = signal<PerfilUsuario | null>(null);
 
   user$ = user(this.auth);
@@ -26,10 +26,8 @@ export class AuthService {
       this.currentUser.set(usuario);
       
       if (usuario) {
-        // Si hay usuario, descargamos sus datos de la colección 'users'
         await this.cargarPerfil(usuario.uid);
       } else {
-        // Si no hay usuario, limpiamos el perfil
         this.currentUserProfile.set(null);
       }
     });
@@ -50,12 +48,36 @@ export class AuthService {
     }
   }
 
-  // Registro (Igual que antes)
+  // CREAR USUARIO DESDE ADMIN (Solo crea el perfil en la BD)
+  async crearUsuarioDesdeAdmin(datos: any) {
+    const usersCollection = collection(this.firestore, 'users');
+    
+    // Ahora sí funcionará addDoc porque ya está importado arriba
+    await addDoc(usersCollection, {
+      ...datos,
+      role: 'cliente',
+      estado: 'activo', 
+      fechaRegistro: new Date()
+    });
+  }
+
+  // CAMBIAR ESTADO
+  async cambiarEstadoUsuario(uid: string, nuevoEstado: 'activo' | 'inactivo') {
+    const docRef = doc(this.firestore, `users/${uid}`);
+    await updateDoc(docRef, { estado: nuevoEstado });
+  }
+
+  // ELIMINAR USUARIO
+  async eliminarUsuario(uid: string) {
+    const docRef = doc(this.firestore, `users/${uid}`);
+    await deleteDoc(docRef);
+  }
+
+  // REGISTRO NORMAL (Crea Auth + Perfil)
   async register(datos: any) {
     const credencial = await createUserWithEmailAndPassword(this.auth, datos.email, datos.pass);
     const uid = credencial.user.uid;
     
-    // Guardamos en Firestore
     const perfil: PerfilUsuario = {
       uid: uid,
       email: datos.email,
@@ -63,21 +85,20 @@ export class AuthService {
       apellidos: datos.apellidos,
       dni: datos.dni,
       celular: datos.celular,
-      role: 'cliente' // Por defecto
+      role: 'cliente'
     };
 
     await setDoc(doc(this.firestore, `users/${uid}`), perfil);
-    
-    // Actualizamos la señal manualmente para no esperar a la recarga
     this.currentUserProfile.set(perfil);
   }
+
+  // ACTUALIZAR PERFIL PROPIO
   async updateUserProfile(datosActualizados: any) {
     const uid = this.currentUser()?.uid;
     if (!uid) throw new Error('No hay usuario logueado');
 
     const docRef = doc(this.firestore, `users/${uid}`);
     
-    // Actualizamos solo los campos que nos manden en Firestore
     await updateDoc(docRef, {
       nombre: datosActualizados.nombre,
       apellidos: datosActualizados.apellidos,
@@ -85,8 +106,19 @@ export class AuthService {
       celular: datosActualizados.celular
     });
 
-    // Actualizamos la señal localmente para ver el cambio al instante
     this.currentUserProfile.update(prev => ({ ...prev!, ...datosActualizados }));
+  }
+
+  // OBTENER TODOS (Para Admin)
+  obtenerTodosLosUsuarios() {
+    const usersCollection = collection(this.firestore, 'users');
+    return collectionData(usersCollection, { idField: 'uid' }) as Observable<any[]>;
+  }
+
+  // CAMBIAR ROL
+  async actualizarRolUsuario(uid: string, nuevoRol: 'admin' | 'cliente') {
+    const docRef = doc(this.firestore, `users/${uid}`);
+    await updateDoc(docRef, { role: nuevoRol });
   }
 
   login(email: string, pass: string) {
@@ -94,7 +126,7 @@ export class AuthService {
   }
 
   logout() {
-    this.currentUserProfile.set(null); // Limpiamos perfil al salir
+    this.currentUserProfile.set(null); 
     return signOut(this.auth);
   }
 }
