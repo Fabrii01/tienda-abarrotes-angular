@@ -13,15 +13,10 @@ import { OrderListAdminComponent } from '../../components/order-list-admin/order
   template: `
     <div class="d-flex" style="min-height: 90vh;">
       
-      <button class="btn btn-primary d-md-none position-fixed top-0 start-0 m-3 z-3 shadow" 
-              type="button" data-bs-toggle="offcanvas" data-bs-target="#adminSidebar">
-        <i class="bi bi-list fs-4"></i>
-      </button>
-
       <div class="offcanvas-md offcanvas-start bg-dark text-white flex-shrink-0" 
            tabindex="-1" id="adminSidebar" style="width: 250px;">
         
-        <div class="offcanvas-header border-bottom border-secondary">
+        <div class="offcanvas-header border-bottom border-secondary bg-dark text-white">
           <h5 class="offcanvas-title fw-bold">Panel Admin</h5>
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" data-bs-target="#adminSidebar"></button>
         </div>
@@ -31,37 +26,43 @@ import { OrderListAdminComponent } from '../../components/order-list-admin/order
           <hr class="d-none d-md-block border-secondary">
           
           <ul class="nav nav-pills flex-column mb-auto">
+            
             <li class="nav-item mb-2">
               <a class="nav-link text-white cursor-pointer" [class.active]="vistaActual === 'nuevo-producto'" 
-                 (click)="cambiarVista('nuevo-producto')" data-bs-dismiss="offcanvas" data-bs-target="#adminSidebar">
+                 (click)="cambiarVista('nuevo-producto')" 
+                 data-bs-dismiss="offcanvas" data-bs-target="#adminSidebar">
                 <i class="bi bi-plus-circle me-2"></i> Nuevo Producto
               </a>
             </li>
             
             <li class="nav-item mb-2">
               <a class="nav-link text-white cursor-pointer" [class.active]="vistaActual === 'productos'" 
-                 (click)="cambiarVista('productos')" data-bs-dismiss="offcanvas" data-bs-target="#adminSidebar">
+                 (click)="cambiarVista('productos')" 
+                 data-bs-dismiss="offcanvas" data-bs-target="#adminSidebar">
                 <i class="bi bi-box-seam me-2"></i> Inventario
               </a>
             </li>
             
             <li class="nav-item mb-2">
               <a class="nav-link text-white cursor-pointer" [class.active]="vistaActual === 'ventas'" 
-                 (click)="cambiarVista('ventas')" data-bs-dismiss="offcanvas" data-bs-target="#adminSidebar">
+                 (click)="cambiarVista('ventas')" 
+                 data-bs-dismiss="offcanvas" data-bs-target="#adminSidebar">
                 <i class="bi bi-cash-coin me-2"></i> Ventas / Pedidos
               </a>
             </li>
 
             <li class="nav-item mb-2">
               <a class="nav-link text-white cursor-pointer" [class.active]="vistaActual === 'usuarios'" 
-                 (click)="cambiarVista('usuarios')" data-bs-dismiss="offcanvas" data-bs-target="#adminSidebar">
+                 (click)="cambiarVista('usuarios')" 
+                 data-bs-dismiss="offcanvas" data-bs-target="#adminSidebar">
                 <i class="bi bi-people me-2"></i> Usuarios
               </a>
             </li>
             
             <li class="nav-item mb-2">
               <a class="nav-link text-white cursor-pointer" [class.active]="vistaActual === 'configuracion'" 
-                 (click)="cambiarVista('configuracion')" data-bs-dismiss="offcanvas" data-bs-target="#adminSidebar">
+                 (click)="cambiarVista('configuracion')" 
+                 data-bs-dismiss="offcanvas" data-bs-target="#adminSidebar">
                 <i class="bi bi-tags me-2"></i> Marcas y Categ.
               </a>
             </li>
@@ -69,8 +70,13 @@ import { OrderListAdminComponent } from '../../components/order-list-admin/order
         </div>
       </div>
 
-      <div class="flex-grow-1 p-3 p-md-4 bg-light overflow-auto" style="height: 90vh;">
-        <div class="d-md-none mb-5"></div> 
+      <div class="flex-grow-1 p-3 p-md-4 bg-light overflow-auto">
+        
+        <button class="btn btn-dark w-100 d-md-none mb-4 d-flex align-items-center justify-content-center gap-2 py-2" 
+                type="button" data-bs-toggle="offcanvas" data-bs-target="#adminSidebar">
+          <i class="bi bi-list fs-4"></i>
+          <span class="fw-bold">ABRIR MENÚ ADMIN</span>
+        </button>
 
         <div *ngIf="vistaActual === 'nuevo-producto'">
           <h3 class="mb-4 fw-bold">Agregar Producto</h3>
