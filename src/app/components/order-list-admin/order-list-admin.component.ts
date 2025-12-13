@@ -13,12 +13,13 @@ import { FormsModule } from '@angular/forms';
         <h5 class="mb-0 fw-bold"><i class="bi bi-receipt me-2"></i>Control de Ventas</h5>
       </div>
 
-      <div class="table-responsive" style="min-height: 500px; padding-bottom: 100px;">
-        <table class="table table-hover align-middle mb-0">
+      <div class="table-responsive" style="min-height: 400px; padding-bottom: 80px;">
+        <table class="table table-hover align-middle mb-0 text-nowrap">
           <thead class="table-light">
             <tr>
               <th>Fecha</th>
-              <th>Cliente / Entrega</th> <th>Método Pago</th>
+              <th>Cliente / Entrega</th>
+              <th>Método Pago</th>
               <th>Total</th>
               <th>Estado</th>
               <th>Acciones</th>
@@ -32,7 +33,7 @@ import { FormsModule } from '@angular/forms';
               </td>
 
               <td>
-                <div class="fw-bold">{{ orden.usuarioNombre }}</div>
+                <div class="fw-bold text-truncate" style="max-width: 150px;">{{ orden.usuarioNombre }}</div>
                 <div class="small text-muted mb-1">{{ orden.email }}</div>
                 
                 <span class="badge bg-light text-dark border" *ngIf="orden.tipoEntrega">
@@ -67,10 +68,9 @@ import { FormsModule } from '@angular/forms';
 
               <td>
                 <div class="d-flex gap-2">
-                  
                   <button class="btn btn-sm btn-success" 
                           (click)="enviarBoletaWhatsapp(orden)" 
-                          title="Enviar Boleta por WhatsApp">
+                          title="WhatsApp">
                     <i class="bi bi-whatsapp"></i>
                   </button>
 
@@ -84,19 +84,16 @@ import { FormsModule } from '@angular/forms';
                     
                     <ul class="dropdown-menu dropdown-menu-end shadow border-0">
                       <li><h6 class="dropdown-header">Cambiar Estado</h6></li>
-                      
                       <li>
                         <button class="dropdown-item text-success fw-bold" (click)="cambiarEstado(orden, 'pagado')">
                           <i class="bi bi-check2-all me-2"></i>Confirmar Pago
                         </button>
                       </li>
-                      
                       <li>
                         <button class="dropdown-item text-info fw-bold" (click)="cambiarEstado(orden, 'enviado')">
                           <i class="bi bi-box-seam me-2"></i>Marcar Enviado
                         </button>
                       </li>
-
                       <li><hr class="dropdown-divider"></li>
                       <li>
                           <button class="dropdown-item small" data-bs-toggle="modal" data-bs-target="#detalleOrdenModal" (click)="verDetalle(orden)">
@@ -107,7 +104,6 @@ import { FormsModule } from '@angular/forms';
                   </div>
                 </div>
               </td>
-
             </tr>
           </tbody>
         </table>
@@ -118,28 +114,29 @@ import { FormsModule } from '@angular/forms';
       <div class="modal-dialog">
         <div class="modal-content" *ngIf="ordenSeleccionada">
           <div class="modal-header">
-            <h5 class="modal-title fw-bold">Pedido de {{ ordenSeleccionada.usuarioNombre }}</h5>
+            <h5 class="modal-title fw-bold">Detalle Pedido</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
           </div>
           <div class="modal-body">
-            <ul class="list-group list-group-flush">
-              <li class="list-group-item d-flex justify-content-between align-items-center" 
+            <p class="mb-2 fw-bold">{{ ordenSeleccionada.usuarioNombre }}</p>
+            <ul class="list-group list-group-flush mb-3">
+              <li class="list-group-item d-flex justify-content-between align-items-center px-0" 
                   *ngFor="let p of ordenSeleccionada.productos">
                 <div class="d-flex align-items-center">
                   <span class="badge bg-secondary me-2">{{ p.cantidadCarrito }}</span>
-                  {{ p.nombre }}
+                  <span class="text-truncate" style="max-width: 180px;">{{ p.nombre }}</span>
                 </div>
                 <span class="fw-bold">S/ {{ p.precioOferta || p.precio }}</span>
               </li>
             </ul>
-            <div class="text-end mt-3 pt-3 border-top">
-              <h4 class="fw-bold">Total: S/ {{ ordenSeleccionada.total | number:'1.2-2' }}</h4>
-            </div>
             
-            <div class="mt-3 bg-light p-3 rounded" *ngIf="ordenSeleccionada.tipoEntrega">
-                <p class="mb-1"><strong>Entrega:</strong> {{ ordenSeleccionada.tipoEntrega | uppercase }}</p>
-                <p class="mb-1"><strong>Fecha:</strong> {{ ordenSeleccionada.horarioEntrega | date:'short' }}</p>
-                <p class="mb-0" *ngIf="ordenSeleccionada.direccion"><strong>Dirección:</strong> {{ ordenSeleccionada.direccion }}</p>
+            <div class="bg-light p-3 rounded">
+                <p class="mb-1 small"><strong>Entrega:</strong> {{ ordenSeleccionada.tipoEntrega | uppercase }}</p>
+                <p class="mb-1 small"><strong>Fecha:</strong> {{ ordenSeleccionada.horarioEntrega }}</p>
+                <p class="mb-0 small" *ngIf="ordenSeleccionada.direccion"><strong>Dirección:</strong> {{ ordenSeleccionada.direccion }}</p>
+            </div>
+             <div class="text-end mt-3 border-top pt-2">
+              <h4 class="fw-bold text-success">Total: S/ {{ ordenSeleccionada.total | number:'1.2-2' }}</h4>
             </div>
           </div>
         </div>
@@ -175,39 +172,26 @@ export class OrderListAdminComponent implements OnInit {
     this.ordenSeleccionada = orden;
   }
 
-  // --- NUEVA FUNCIÓN: ENVIAR BOLETA ---
   enviarBoletaWhatsapp(orden: any) {
     if (!orden.celular) {
       alert('Este pedido no tiene número de celular registrado.');
       return;
     }
-
-    // 1. Construir el mensaje
     let mensaje = `Hola *${orden.usuarioNombre}*, gracias por tu compra en Abarrotes.com! 🛒\n\n`;
     mensaje += `📅 *Fecha:* ${new Date(orden.fecha.seconds * 1000).toLocaleDateString()}\n`;
-    
-    // Agregamos info de entrega si existe
     if (orden.tipoEntrega) {
        mensaje += `🚚 *Entrega:* ${orden.tipoEntrega.toUpperCase()} - ${orden.horarioEntrega}\n`;
        if (orden.direccion) mensaje += `📍 *Dirección:* ${orden.direccion}\n`;
     }
-    
     mensaje += `--------------------------------\n`;
-    
-    // Listar productos
     orden.productos.forEach((p: any) => {
       mensaje += `▪️ ${p.nombre} (x${p.cantidadCarrito}) - S/ ${(p.precioOferta || p.precio) * p.cantidadCarrito}\n`;
     });
-    
     mensaje += `--------------------------------\n`;
     mensaje += `💰 *TOTAL PAGADO:* S/ ${orden.total}\n`;
     mensaje += `✅ *Estado:* ${orden.estado.toUpperCase()}\n\n`;
     mensaje += `Gracias por tu preferencia!`;
-
-    // 2. Crear Link
     const url = `https://wa.me/51${orden.celular}?text=${encodeURIComponent(mensaje)}`;
-
-    // 3. Abrir
     window.open(url, '_blank');
   }
 }
