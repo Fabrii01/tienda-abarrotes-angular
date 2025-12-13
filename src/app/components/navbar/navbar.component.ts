@@ -1,6 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink, Router } from '@angular/router'; // Asegúrate de importar Router
+import { RouterLink, Router } from '@angular/router'; 
 import { StoreService } from '../../services/store.service';
 import { AuthService } from '../../services/auth.service';
 
@@ -10,24 +10,24 @@ import { AuthService } from '../../services/auth.service';
   imports: [CommonModule, RouterLink],
   template: `
     <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom py-2 sticky-top shadow-sm" style="height: 70px;">
-      <div class="container-fluid px-4">
+      <div class="container-fluid px-3 px-lg-4">
         
-        <div class="d-flex align-items-center gap-3">
+        <div class="d-flex align-items-center gap-2 gap-lg-3">
              
              <button *ngIf="!router.url.includes('/admin')" 
-                     class="btn btn-outline-dark border-0" 
+                     class="btn btn-outline-dark border-0 p-1" 
                      type="button" 
                      data-bs-toggle="offcanvas" 
                      data-bs-target="#menuFalabella">
-               <i class="bi bi-list fs-4"></i>
+               <i class="bi bi-list fs-3"></i>
              </button>
              
-             <a class="navbar-brand fw-bold text-success fs-4 cursor-pointer" (click)="irAlInicio()">
+             <a class="navbar-brand fw-bold text-success fs-4 cursor-pointer m-0" (click)="irAlInicio()">
                Abarrotes<span class="text-dark small">.com</span>
              </a>
         </div>
 
-        <div class="flex-grow-1 px-3 d-none d-md-block" *ngIf="router.url === '/'">
+        <div class="flex-grow-1 px-3 d-none d-md-block mx-auto" style="max-width: 600px;" *ngIf="router.url === '/'">
           <div class="input-group">
             <input type="text" 
                    class="form-control rounded-pill border-end-0 ps-4 bg-light" 
@@ -40,47 +40,68 @@ import { AuthService } from '../../services/auth.service';
           </div>
         </div>
 
-        <div class="d-flex align-items-center gap-3">
+        <div class="d-flex align-items-center gap-3 ms-auto">
           
-          <div *ngIf="!authService.currentUserProfile()" 
-               class="d-none d-lg-flex flex-column align-items-center text-muted small cursor-pointer"
-               routerLink="/login">
-            <span class="text-muted">Hola,</span>
-            <span class="fw-bold text-dark">Inicia sesión</span>
-          </div>
-
-          <div *ngIf="authService.currentUserProfile()" class="d-none d-lg-flex flex-column align-items-center small cursor-pointer dropdown">
-            <span class="text-muted">Hola,</span>
-            <span class="fw-bold text-success dropdown-toggle" data-bs-toggle="dropdown">
-              {{ obtenerNombreBonito() }}
-            </span>
+          <div class="dropdown">
             
-            <ul class="dropdown-menu dropdown-menu-end shadow border-0">
-              <li><span class="dropdown-item-text text-muted small">{{ authService.currentUser()?.email }}</span></li>
-              <li><hr class="dropdown-divider"></li>
+            <a class="d-flex align-items-center text-decoration-none cursor-pointer" 
+               data-bs-toggle="dropdown" 
+               aria-expanded="false">
+               
+               <div *ngIf="!authService.currentUserProfile()" class="d-flex align-items-center gap-2">
+                  <div class="bg-light rounded-circle d-flex align-items-center justify-content-center border" style="width: 40px; height: 40px;">
+                    <i class="bi bi-person fs-5 text-dark"></i>
+                  </div>
+                  <div class="d-none d-lg-block lh-sm text-start">
+                    <small class="text-muted d-block" style="font-size: 0.7rem;">Bienvenido</small>
+                    <span class="fw-bold text-dark small">Inicia sesión</span>
+                  </div>
+               </div>
+
+               <div *ngIf="authService.currentUserProfile()" class="d-flex align-items-center gap-2">
+                  <div class="bg-light rounded-circle d-flex align-items-center justify-content-center border text-success fw-bold" style="width: 40px; height: 40px;">
+                    {{ obtenerIniciales() }}
+                  </div>
+                  <div class="d-none d-lg-block lh-sm text-start">
+                    <small class="text-muted d-block" style="font-size: 0.7rem;">Hola,</small>
+                    <span class="fw-bold text-success small text-truncate" style="max-width: 100px;">{{ obtenerNombreBonito() }}</span>
+                  </div>
+               </div>
+            </a>
+
+            <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2">
               
-              <li *ngIf="authService.currentUserProfile()?.role === 'admin'">
-                <a class="dropdown-item fw-bold text-primary" routerLink="/admin">
-                  <i class="bi bi-speedometer2 me-2"></i>Panel Admin
+              <li *ngIf="!authService.currentUserProfile()">
+                <a class="dropdown-item fw-bold text-success" routerLink="/login">
+                  <i class="bi bi-box-arrow-in-right me-2"></i>Iniciar Sesión
                 </a>
+                <a class="dropdown-item small" routerLink="/register">Registrarse</a>
               </li>
 
-              <li><a class="dropdown-item" routerLink="/perfil">Mi Perfil</a></li>
-              <li>
-  <a class="dropdown-item" routerLink="/mis-compras">
-    <i class="bi bi-bag me-2"></i>Mis Compras
-  </a>
-</li>
-              <li><hr class="dropdown-divider"></li>
-              <li>
-                <button class="dropdown-item text-danger fw-bold" (click)="logout()">
-                  <i class="bi bi-box-arrow-right me-2"></i>Cerrar Sesión
-                </button>
-              </li>
+              <div *ngIf="authService.currentUserProfile()">
+                <li><span class="dropdown-item-text text-muted small fst-italic">{{ authService.currentUser()?.email }}</span></li>
+                <li><hr class="dropdown-divider"></li>
+                
+                <li *ngIf="authService.currentUserProfile()?.role === 'admin'">
+                  <a class="dropdown-item fw-bold text-primary" routerLink="/admin">
+                    <i class="bi bi-speedometer2 me-2"></i>Panel Admin
+                  </a>
+                </li>
+
+                <li><a class="dropdown-item" routerLink="/perfil"><i class="bi bi-person-gear me-2"></i>Mi Perfil</a></li>
+                <li><a class="dropdown-item" routerLink="/mis-compras"><i class="bi bi-bag me-2"></i>Mis Compras</a></li>
+                
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                  <button class="dropdown-item text-danger fw-bold" (click)="logout()">
+                    <i class="bi bi-power me-2"></i>Cerrar Sesión
+                  </button>
+                </li>
+              </div>
             </ul>
           </div>
 
-          <a routerLink="/favoritos" class="text-dark fs-5 cursor-pointer position-relative">
+          <a routerLink="/favoritos" class="text-dark fs-5 cursor-pointer position-relative d-none d-sm-block">
             <i class="bi bi-heart"></i>
             <span *ngIf="storeService.favoritos().length > 0" 
                   class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle">
@@ -103,12 +124,14 @@ import { AuthService } from '../../services/auth.service';
   styles: [`
     .cursor-pointer { cursor: pointer; }
     input:focus { box-shadow: none; border-color: #ced4da; } 
+    /* Ocultamos la flecha del dropdown de bootstrap para limpieza */
+    .dropdown-toggle::after { display: none !important; }
   `]
 })
 export class NavbarComponent {
   storeService = inject(StoreService);
   authService = inject(AuthService);
-  public router = inject(Router); // <--- DEBE SER PUBLIC PARA USARLO EN EL HTML
+  public router = inject(Router);
 
   buscar(event: any) {
     this.storeService.buscarProducto(event.target.value);
@@ -122,11 +145,18 @@ export class NavbarComponent {
   obtenerNombreBonito() {
     const perfil = this.authService.currentUserProfile();
     if (perfil) {
-      const primerNombre = perfil.nombre.split(' ')[0];
-      const primerApellido = perfil.apellidos.split(' ')[0];
-      return `${primerNombre} ${primerApellido}`;
+      return perfil.nombre.split(' ')[0]; // Solo el primer nombre
     }
-    return 'Mi Cuenta';
+    return '';
+  }
+
+  // Nueva función para mostrar iniciales dentro del círculo en móvil
+  obtenerIniciales() {
+    const perfil = this.authService.currentUserProfile();
+    if (perfil && perfil.nombre) {
+      return perfil.nombre.charAt(0).toUpperCase();
+    }
+    return '';
   }
 
   logout() {
