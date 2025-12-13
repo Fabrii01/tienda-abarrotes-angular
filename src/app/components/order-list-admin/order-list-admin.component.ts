@@ -18,8 +18,7 @@ import { FormsModule } from '@angular/forms';
           <thead class="table-light">
             <tr>
               <th>Fecha</th>
-              <th>Cliente</th>
-              <th>Método</th>
+              <th>Cliente / Entrega</th> <th>Método Pago</th>
               <th>Total</th>
               <th>Estado</th>
               <th>Acciones</th>
@@ -34,7 +33,12 @@ import { FormsModule } from '@angular/forms';
 
               <td>
                 <div class="fw-bold">{{ orden.usuarioNombre }}</div>
-                <div class="small text-muted">{{ orden.email }}</div>
+                <div class="small text-muted mb-1">{{ orden.email }}</div>
+                
+                <span class="badge bg-light text-dark border" *ngIf="orden.tipoEntrega">
+                  <i class="bi" [class.bi-truck]="orden.tipoEntrega === 'delivery'" [class.bi-shop]="orden.tipoEntrega === 'recojo'"></i>
+                  {{ orden.tipoEntrega | uppercase }}
+                </span>
               </td>
 
               <td>
@@ -62,36 +66,45 @@ import { FormsModule } from '@angular/forms';
               </td>
 
               <td>
-                <div class="dropdown">
-                  <button class="btn btn-sm btn-outline-dark dropdown-toggle" 
-                          type="button" 
-                          data-bs-toggle="dropdown" 
-                          data-bs-display="static">
-                    <i class="bi bi-gear"></i>
-                  </button>
+                <div class="d-flex gap-2">
                   
-                  <ul class="dropdown-menu dropdown-menu-end shadow border-0">
-                    <li><h6 class="dropdown-header">Cambiar Estado</h6></li>
-                    
-                    <li>
-                      <button class="dropdown-item text-success fw-bold" (click)="cambiarEstado(orden, 'pagado')">
-                        <i class="bi bi-check2-all me-2"></i>Confirmar Pago
-                      </button>
-                    </li>
-                    
-                    <li>
-                      <button class="dropdown-item text-info fw-bold" (click)="cambiarEstado(orden, 'enviado')">
-                        <i class="bi bi-box-seam me-2"></i>Marcar Enviado
-                      </button>
-                    </li>
+                  <button class="btn btn-sm btn-success" 
+                          (click)="enviarBoletaWhatsapp(orden)" 
+                          title="Enviar Boleta por WhatsApp">
+                    <i class="bi bi-whatsapp"></i>
+                  </button>
 
-                    <li><hr class="dropdown-divider"></li>
-                    <li>
-                        <button class="dropdown-item small" data-bs-toggle="modal" data-bs-target="#detalleOrdenModal" (click)="verDetalle(orden)">
-                            Ver Productos
+                  <div class="dropdown">
+                    <button class="btn btn-sm btn-outline-dark dropdown-toggle" 
+                            type="button" 
+                            data-bs-toggle="dropdown" 
+                            data-bs-display="static">
+                      <i class="bi bi-gear"></i>
+                    </button>
+                    
+                    <ul class="dropdown-menu dropdown-menu-end shadow border-0">
+                      <li><h6 class="dropdown-header">Cambiar Estado</h6></li>
+                      
+                      <li>
+                        <button class="dropdown-item text-success fw-bold" (click)="cambiarEstado(orden, 'pagado')">
+                          <i class="bi bi-check2-all me-2"></i>Confirmar Pago
                         </button>
-                    </li>
-                  </ul>
+                      </li>
+                      
+                      <li>
+                        <button class="dropdown-item text-info fw-bold" (click)="cambiarEstado(orden, 'enviado')">
+                          <i class="bi bi-box-seam me-2"></i>Marcar Enviado
+                        </button>
+                      </li>
+
+                      <li><hr class="dropdown-divider"></li>
+                      <li>
+                          <button class="dropdown-item small" data-bs-toggle="modal" data-bs-target="#detalleOrdenModal" (click)="verDetalle(orden)">
+                              Ver Productos
+                          </button>
+                      </li>
+                    </ul>
+                  </div>
                 </div>
               </td>
 
@@ -121,6 +134,12 @@ import { FormsModule } from '@angular/forms';
             </ul>
             <div class="text-end mt-3 pt-3 border-top">
               <h4 class="fw-bold">Total: S/ {{ ordenSeleccionada.total | number:'1.2-2' }}</h4>
+            </div>
+            
+            <div class="mt-3 bg-light p-3 rounded" *ngIf="ordenSeleccionada.tipoEntrega">
+                <p class="mb-1"><strong>Entrega:</strong> {{ ordenSeleccionada.tipoEntrega | uppercase }}</p>
+                <p class="mb-1"><strong>Fecha:</strong> {{ ordenSeleccionada.horarioEntrega | date:'short' }}</p>
+                <p class="mb-0" *ngIf="ordenSeleccionada.direccion"><strong>Dirección:</strong> {{ ordenSeleccionada.direccion }}</p>
             </div>
           </div>
         </div>
@@ -154,5 +173,41 @@ export class OrderListAdminComponent implements OnInit {
 
   verDetalle(orden: any) {
     this.ordenSeleccionada = orden;
+  }
+
+  // --- NUEVA FUNCIÓN: ENVIAR BOLETA ---
+  enviarBoletaWhatsapp(orden: any) {
+    if (!orden.celular) {
+      alert('Este pedido no tiene número de celular registrado.');
+      return;
+    }
+
+    // 1. Construir el mensaje
+    let mensaje = `Hola *${orden.usuarioNombre}*, gracias por tu compra en Abarrotes.com! 🛒\n\n`;
+    mensaje += `📅 *Fecha:* ${new Date(orden.fecha.seconds * 1000).toLocaleDateString()}\n`;
+    
+    // Agregamos info de entrega si existe
+    if (orden.tipoEntrega) {
+       mensaje += `🚚 *Entrega:* ${orden.tipoEntrega.toUpperCase()} - ${orden.horarioEntrega}\n`;
+       if (orden.direccion) mensaje += `📍 *Dirección:* ${orden.direccion}\n`;
+    }
+    
+    mensaje += `--------------------------------\n`;
+    
+    // Listar productos
+    orden.productos.forEach((p: any) => {
+      mensaje += `▪️ ${p.nombre} (x${p.cantidadCarrito}) - S/ ${(p.precioOferta || p.precio) * p.cantidadCarrito}\n`;
+    });
+    
+    mensaje += `--------------------------------\n`;
+    mensaje += `💰 *TOTAL PAGADO:* S/ ${orden.total}\n`;
+    mensaje += `✅ *Estado:* ${orden.estado.toUpperCase()}\n\n`;
+    mensaje += `Gracias por tu preferencia!`;
+
+    // 2. Crear Link
+    const url = `https://wa.me/51${orden.celular}?text=${encodeURIComponent(mensaje)}`;
+
+    // 3. Abrir
+    window.open(url, '_blank');
   }
 }
