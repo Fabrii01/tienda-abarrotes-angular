@@ -1,7 +1,8 @@
 import { Component, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { StoreService } from '../../services/store.service';
-import { RouterLink } from '@angular/router';
+import { AuthService } from '../../services/auth.service'; // 1. Importar AuthService
+import { RouterLink, Router } from '@angular/router';      // 2. Importar Router
 
 @Component({
   selector: 'app-cart-page',
@@ -43,11 +44,8 @@ import { RouterLink } from '@angular/router';
                   <div class="d-flex align-items-center gap-2">
                      <span class="text-dark fw-bold">S/ {{ obtenerPrecioUnitario(item) | number:'1.2-2' }}</span>
                      <span *ngIf="tieneDescuento(item)" class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 small">
-                        -{{ calcularAhorro(item) | number:'1.2-2' }} de ahorro
+                        -{{ calcularAhorro(item) | number:'1.2-2' }} ahorro
                      </span>
-                  </div>
-                  <div *ngIf="tieneDescuento(item)" class="text-decoration-line-through text-muted small" style="font-size: 0.75rem;">
-                     Precio lista: S/ {{ item.precio | number:'1.2-2' }}
                   </div>
                 </div>
 
@@ -99,7 +97,8 @@ import { RouterLink } from '@angular/router';
               <span class="fs-3 fw-bold text-dark">S/ {{ storeService.totalPagar() | number:'1.2-2' }}</span>
             </div>
 
-            <button class="btn btn-dark w-100 py-3 fw-bold rounded-pill shadow-sm hover-scale mb-3" routerLink="/checkout">
+            <button class="btn btn-dark w-100 py-3 fw-bold rounded-pill shadow-sm hover-scale mb-3" 
+                    (click)="irAPagar()">
               <i class="bi bi-credit-card-2-front me-2"></i> Ir a Pagar
             </button>
             
@@ -108,8 +107,9 @@ import { RouterLink } from '@angular/router';
             </a>
 
             <div class="mt-4 pt-3 border-top text-center opacity-50 grayscale">
-               <img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg" height="20" class="mx-2">
-               <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" height="20" class="mx-2">
+               <i class="bi bi-credit-card-2-back fs-4 mx-2"></i>
+               <i class="bi bi-qr-code fs-4 mx-2"></i>
+               <i class="bi bi-cash-coin fs-4 mx-2"></i>
             </div>
           </div>
         </div>
@@ -140,6 +140,20 @@ import { RouterLink } from '@angular/router';
 })
 export class CartPageComponent {
   storeService = inject(StoreService);
+  authService = inject(AuthService); // Inyectamos Auth
+  router = inject(Router);           // Inyectamos Router
+
+  // Lógica de seguridad para pagar
+  irAPagar() {
+    if (this.authService.currentUserProfile()) {
+      // Si está logueado, pasa al checkout
+      this.router.navigate(['/checkout']);
+    } else {
+      // Si NO está logueado, alerta y manda al login
+      alert('🔒 Para finalizar tu compra, necesitas iniciar sesión o registrarte.');
+      this.router.navigate(['/login']);
+    }
+  }
 
   contarItems() {
     return this.storeService.carrito().reduce((acc: number, item: any) => acc + (item.cantidadCarrito || 1), 0);
@@ -158,7 +172,6 @@ export class CartPageComponent {
     return item.precio - item.precioOferta;
   }
 
-  // Calcula el ahorro total de todo el carrito
   totalAhorrado = computed(() => {
     return this.storeService.carrito().reduce((acc: number, item: any) => {
       const ahorroUnitario = this.tieneDescuento(item) ? (item.precio - item.precioOferta) : 0;

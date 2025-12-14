@@ -1,6 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { RouterLink, Router } from '@angular/router'; // Importar Router
 import { StoreService } from '../../services/store.service';
 import { AuthService } from '../../services/auth.service';
 
@@ -53,11 +53,13 @@ import { AuthService } from '../../services/auth.service';
              <i class="bi bi-house-door me-3 fs-5 text-muted"></i>
              <span class="fw-medium">Inicio</span>
            </a>
-           <a routerLink="/mis-compras" class="sidebar-link d-flex align-items-center px-4 py-3 text-decoration-none text-dark" data-bs-dismiss="offcanvas">
+           
+           <a (click)="navegarProtegido('/mis-compras')" class="sidebar-link d-flex align-items-center px-4 py-3 text-decoration-none text-dark cursor-pointer" data-bs-dismiss="offcanvas">
              <i class="bi bi-bag-check me-3 fs-5 text-muted"></i>
              <span class="fw-medium">Mis Compras</span>
            </a>
-           <a routerLink="/favoritos" class="sidebar-link d-flex align-items-center px-4 py-3 text-decoration-none text-dark" data-bs-dismiss="offcanvas">
+
+           <a (click)="navegarProtegido('/favoritos')" class="sidebar-link d-flex align-items-center px-4 py-3 text-decoration-none text-dark cursor-pointer" data-bs-dismiss="offcanvas">
              <i class="bi bi-heart me-3 fs-5 text-muted"></i>
              <span class="fw-medium">Favoritos</span>
            </a>
@@ -81,10 +83,6 @@ import { AuthService } from '../../services/auth.service';
              <span>{{ cat.nombre }}</span> 
              <i class="bi bi-chevron-right text-muted small icon-move"></i>
           </button>
-          
-          <div *ngIf="storeService.categorias().length === 0" class="px-4 py-3 text-muted small fst-italic">
-            <span class="spinner-border spinner-border-sm me-2"></span> Cargando categorías...
-          </div>
         </div>
 
       </div>
@@ -99,42 +97,33 @@ import { AuthService } from '../../services/auth.service';
     </div>
   `,
   styles: [`
-    /* Interacciones del Menú */
-    .sidebar-link {
-      transition: all 0.2s ease;
-      border-left: 4px solid transparent;
-    }
-    
-    .sidebar-link:hover {
-      background-color: #f8f9fa; /* Gris muy suave */
-      border-left-color: #198754; /* Borde verde a la izquierda */
-      padding-left: 1.8rem !important; /* Efecto de desplazamiento */
-      color: #198754 !important;
-    }
-
-    .sidebar-link:hover i.text-muted {
-      color: #198754 !important;
-    }
-
+    .sidebar-link { transition: all 0.2s ease; border-left: 4px solid transparent; }
+    .sidebar-link:hover { background-color: #f8f9fa; border-left-color: #198754; padding-left: 1.8rem !important; color: #198754 !important; }
+    .sidebar-link:hover i.text-muted { color: #198754 !important; }
     .icon-move { transition: transform 0.2s; }
     .sidebar-link:hover .icon-move { transform: translateX(5px); }
-
-    /* Cabecera */
     .ls-1 { letter-spacing: 1px; }
     .hover-glass:hover { background: rgba(255,255,255,0.1); }
     .cursor-pointer { cursor: pointer; }
-
-    /* Footer */
     .hover-danger:hover { background-color: #dc3545; color: white; }
-    
-    /* Scrollbar invisible pero funcional */
     .custom-scrollbar { overflow-y: auto; scrollbar-width: thin; }
   `]
 })
 export class SidebarComponent {
   storeService = inject(StoreService);
   authService = inject(AuthService);
+  router = inject(Router);
   
+  // FUNCION NUEVA: Protege la navegación
+  navegarProtegido(ruta: string) {
+    if (this.authService.currentUserProfile()) {
+      this.router.navigate([ruta]);
+    } else {
+      alert('Debes iniciar sesión para acceder a esta sección.');
+      this.router.navigate(['/login']);
+    }
+  }
+
   filtrar(categoria: string) {
     this.storeService.cambiarCategoria(categoria);
   }
@@ -143,7 +132,6 @@ export class SidebarComponent {
     const perfil = this.authService.currentUserProfile();
     if (perfil) {
       const primerNombre = perfil.nombre.split(' ')[0];
-      // Capitalizar primera letra
       return primerNombre.charAt(0).toUpperCase() + primerNombre.slice(1).toLowerCase();
     }
     return 'Usuario';
@@ -151,9 +139,7 @@ export class SidebarComponent {
 
   obtenerIniciales() {
     const perfil = this.authService.currentUserProfile();
-    if (perfil && perfil.nombre) {
-      return perfil.nombre.charAt(0).toUpperCase();
-    }
+    if (perfil && perfil.nombre) return perfil.nombre.charAt(0).toUpperCase();
     return 'U';
   }
 
