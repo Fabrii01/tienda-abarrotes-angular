@@ -40,10 +40,17 @@ import { AuthService } from '../../services/auth.service';
           </div>
         </div>
 
-        <div class="d-flex align-items-center gap-3 ms-auto">
+        <div class="d-flex align-items-center gap-2 gap-md-3 ms-auto">
           
+          <a *ngIf="authService.currentUserProfile()?.role === 'admin'" 
+             routerLink="/admin" 
+             class="btn btn-sm btn-primary fw-bold d-flex align-items-center gap-2 rounded-pill px-3 shadow-sm"
+             title="Ir al Panel Admin">
+             <i class="bi bi-speedometer2"></i>
+             <span class="d-none d-md-block">Admin</span>
+          </a>
+
           <div class="dropdown">
-            
             <a class="d-flex align-items-center text-decoration-none cursor-pointer" 
                data-bs-toggle="dropdown" 
                aria-expanded="false">
@@ -70,7 +77,6 @@ import { AuthService } from '../../services/auth.service';
             </a>
 
             <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2">
-              
               <li *ngIf="!authService.currentUserProfile()">
                 <a class="dropdown-item fw-bold text-success" routerLink="/login">
                   <i class="bi bi-box-arrow-in-right me-2"></i>Iniciar Sesión
@@ -82,12 +88,6 @@ import { AuthService } from '../../services/auth.service';
                 <li><span class="dropdown-item-text text-muted small fst-italic">{{ authService.currentUser()?.email }}</span></li>
                 <li><hr class="dropdown-divider"></li>
                 
-                <li *ngIf="authService.currentUserProfile()?.role === 'admin'">
-                  <a class="dropdown-item fw-bold text-primary" routerLink="/admin">
-                    <i class="bi bi-speedometer2 me-2"></i>Panel Admin
-                  </a>
-                </li>
-
                 <li><a class="dropdown-item" routerLink="/perfil"><i class="bi bi-person-gear me-2"></i>Mi Perfil</a></li>
                 <li><a class="dropdown-item" routerLink="/mis-compras"><i class="bi bi-bag me-2"></i>Mis Compras</a></li>
                 
@@ -124,7 +124,6 @@ import { AuthService } from '../../services/auth.service';
   styles: [`
     .cursor-pointer { cursor: pointer; }
     input:focus { box-shadow: none; border-color: #ced4da; } 
-    /* Ocultamos la flecha del dropdown de bootstrap para limpieza */
     .dropdown-toggle::after { display: none !important; }
   `]
 })
@@ -145,12 +144,11 @@ export class NavbarComponent {
   obtenerNombreBonito() {
     const perfil = this.authService.currentUserProfile();
     if (perfil) {
-      return perfil.nombre.split(' ')[0]; // Solo el primer nombre
+      return perfil.nombre.split(' ')[0];
     }
     return '';
   }
 
-  // Nueva función para mostrar iniciales dentro del círculo en móvil
   obtenerIniciales() {
     const perfil = this.authService.currentUserProfile();
     if (perfil && perfil.nombre) {
