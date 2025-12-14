@@ -44,10 +44,10 @@ import { AuthService } from '../../services/auth.service';
           
           <a *ngIf="authService.currentUserProfile()?.role === 'admin'" 
              routerLink="/admin" 
-             class="btn btn-sm btn-primary fw-bold d-flex align-items-center gap-2 rounded-pill px-3 shadow-sm"
+             class="btn btn-sm btn-primary fw-bold d-flex align-items-center gap-1 rounded-pill px-3 shadow-sm"
              title="Ir al Panel Admin">
              <i class="bi bi-speedometer2"></i>
-             <span class="d-none d-md-block">Admin</span>
+             <span>Admin</span>
           </a>
 
           <div class="dropdown">
