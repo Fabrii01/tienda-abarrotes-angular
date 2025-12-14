@@ -1,7 +1,35 @@
-/* src/styles.css */
-@import 'bootstrap-icons/font/bootstrap-icons.css';
-
-/* Un toque extra para que el fondo no sea blanco aburrido */
-body {
-    background-color: #f8f9fa;
+/* Configuración de Fuente Global */
+:root {
+  --bs-font-sans-serif: 'Inter', system-ui, -apple-system, sans-serif;
+  --bs-primary: #0d6efd; /* Azul Admin */
+  --bs-success: #198754; /* Verde Tienda */
 }
+
+body {
+  font-family: var(--bs-font-sans-serif);
+}
+
+/* Mejoras visuales suaves */
+.card {
+  border: none;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05); /* Sombra suave */
+  transition: transform 0.2s;
+}
+
+.btn {
+  border-radius: 50rem; /* Botones redondos */
+  font-weight: 600;
+}
+
+/* Animación de entrada */
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Utilidad para cursor */
+.cursor-pointer { cursor: pointer; }

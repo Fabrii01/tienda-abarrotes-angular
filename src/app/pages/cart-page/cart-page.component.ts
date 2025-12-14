@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { StoreService } from '../../services/store.service';
 import { RouterLink } from '@angular/router';
@@ -8,38 +8,67 @@ import { RouterLink } from '@angular/router';
   standalone: true,
   imports: [CommonModule, RouterLink],
   template: `
-    <div class="container py-5">
-      <h2 class="fw-bold mb-4">Tu Carrito de Compras</h2>
+    <div class="container py-5 animate-fade-in">
+      
+      <div class="d-flex align-items-center gap-3 mb-4 border-bottom pb-3">
+        <h2 class="fw-bold mb-0 text-dark">Carrito de Compras</h2>
+        <span class="badge bg-dark rounded-pill">{{ contarItems() }} items</span>
+      </div>
 
-      <div class="row" *ngIf="storeService.carrito().length > 0; else emptyCart">
+      <div class="row g-5" *ngIf="storeService.carrito().length > 0; else emptyCart">
         
         <div class="col-lg-8">
-          <div class="card border-0 shadow-sm mb-3" *ngFor="let item of storeService.carrito(); let i = index">
-            <div class="card-body">
-              <div class="d-flex align-items-center gap-3">
-                
-                <img [src]="item.imagen" class="rounded" style="width: 80px; height: 80px; object-fit: contain;">
-                
-                <div class="flex-grow-1">
-                  <h5 class="mb-1 fw-bold">{{ item.nombre }}</h5>
-                  <div class="text-muted small mb-2">{{ item.marca }} | {{ item.categoria }}</div>
-                  <div class="text-success fw-bold">S/ {{ obtenerPrecioUnitario(item) | number:'1.2-2' }}</div>
-                </div>
+          
+          <div class="alert alert-success d-flex align-items-center border-0 bg-success bg-opacity-10 mb-4" role="alert">
+            <i class="bi bi-truck fs-4 me-3 text-success"></i>
+            <div>
+               <strong class="text-success">¡Felicidades!</strong> Tienes envío gratis en este pedido.
+            </div>
+          </div>
 
-                <div class="d-flex flex-column align-items-center">
-                  <div class="input-group input-group-sm mb-2" style="width: 100px;">
-                    <button class="btn btn-outline-secondary" (click)="cambiarCantidad(item.id!, -1)">-</button>
-                    <input type="text" class="form-control text-center bg-white" [value]="item.cantidadCarrito" readonly>
-                    <button class="btn btn-outline-secondary" (click)="cambiarCantidad(item.id!, 1)">+</button>
+          <div class="card border-0 shadow-sm mb-3 overflow-hidden" *ngFor="let item of storeService.carrito(); let i = index">
+            <div class="card-body p-4">
+              <div class="row align-items-center">
+                
+                <div class="col-3 col-md-2">
+                  <div class="bg-light rounded p-2 text-center">
+                     <img [src]="item.imagen" class="img-fluid object-fit-contain" style="max-height: 80px;" alt="{{ item.nombre }}">
                   </div>
-                  <small class="fw-bold text-dark">
-                    Sub: S/ {{ (obtenerPrecioUnitario(item) * (item.cantidadCarrito || 1)) | number:'1.2-2' }}
-                  </small>
+                </div>
+                
+                <div class="col-9 col-md-5">
+                  <h6 class="mb-1 fw-bold text-dark text-truncate">{{ item.nombre }}</h6>
+                  <div class="text-muted small mb-2 text-uppercase">{{ item.marca }}</div>
+                  
+                  <div class="d-flex align-items-center gap-2">
+                     <span class="text-dark fw-bold">S/ {{ obtenerPrecioUnitario(item) | number:'1.2-2' }}</span>
+                     <span *ngIf="tieneDescuento(item)" class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 small">
+                        -{{ calcularAhorro(item) | number:'1.2-2' }} de ahorro
+                     </span>
+                  </div>
+                  <div *ngIf="tieneDescuento(item)" class="text-decoration-line-through text-muted small" style="font-size: 0.75rem;">
+                     Precio lista: S/ {{ item.precio | number:'1.2-2' }}
+                  </div>
                 </div>
 
-                <button class="btn btn-outline-danger border-0" (click)="eliminar(i)">
-                  <i class="bi bi-trash-fill"></i>
-                </button>
+                <div class="col-6 col-md-3 mt-3 mt-md-0">
+                  <div class="input-group input-group-sm bg-light rounded border">
+                    <button class="btn btn-link text-dark text-decoration-none" (click)="cambiarCantidad(item.id!, -1)">
+                      <i class="bi bi-dash"></i>
+                    </button>
+                    <input type="text" class="form-control text-center bg-transparent border-0 fw-bold" [value]="item.cantidadCarrito" readonly>
+                    <button class="btn btn-link text-dark text-decoration-none" (click)="cambiarCantidad(item.id!, 1)">
+                      <i class="bi bi-plus"></i>
+                    </button>
+                  </div>
+                </div>
+
+                <div class="col-6 col-md-2 mt-3 mt-md-0 text-end d-flex flex-column align-items-end justify-content-between h-100">
+                   <button class="btn btn-link text-danger p-0 mb-2" (click)="eliminar(i)" title="Eliminar">
+                     <i class="bi bi-trash3"></i>
+                   </button>
+                   <span class="fw-bold fs-6">S/ {{ (obtenerPrecioUnitario(item) * (item.cantidadCarrito || 1)) | number:'1.2-2' }}</span>
+                </div>
 
               </div>
             </div>
@@ -47,55 +76,103 @@ import { RouterLink } from '@angular/router';
         </div>
 
         <div class="col-lg-4">
-          <div class="card border-0 shadow-sm p-3">
-            <h5 class="fw-bold mb-3">Resumen del Pedido</h5>
-            <div class="d-flex justify-content-between mb-2">
+          <div class="card border-0 shadow-lg p-4 bg-white rounded-4 sticky-top" style="top: 100px; z-index: 1;">
+            <h5 class="fw-bold mb-4">Resumen del Pedido</h5>
+            
+            <div class="d-flex justify-content-between mb-2 text-muted">
               <span>Subtotal</span>
               <span>S/ {{ storeService.totalPagar() | number:'1.2-2' }}</span>
             </div>
-            <div class="d-flex justify-content-between mb-3 text-success">
+            <div class="d-flex justify-content-between mb-2 text-success fw-bold">
+              <span>Descuentos</span>
+              <span>- S/ {{ totalAhorrado() | number:'1.2-2' }}</span>
+            </div>
+            <div class="d-flex justify-content-between mb-4 text-success">
               <span>Envío</span>
               <span>Gratis</span>
             </div>
-            <hr>
-            <div class="d-flex justify-content-between mb-4 fs-4 fw-bold">
-              <span>Total</span>
-              <span>S/ {{ storeService.totalPagar() | number:'1.2-2' }}</span>
+            
+            <hr class="border-secondary opacity-10">
+            
+            <div class="d-flex justify-content-between mb-4 align-items-center">
+              <span class="fs-5 fw-bold text-dark">Total a Pagar</span>
+              <span class="fs-3 fw-bold text-dark">S/ {{ storeService.totalPagar() | number:'1.2-2' }}</span>
             </div>
 
-<button class="btn btn-dark w-100 py-3 fw-bold mb-2" routerLink="/checkout">
-  Pagar Ahora
-</button>
-            <button class="btn btn-outline-secondary w-100 mt-2" routerLink="/">Seguir Comprando</button>
+            <button class="btn btn-dark w-100 py-3 fw-bold rounded-pill shadow-sm hover-scale mb-3" routerLink="/checkout">
+              <i class="bi bi-credit-card-2-front me-2"></i> Ir a Pagar
+            </button>
+            
+            <a routerLink="/" class="btn btn-link text-muted w-100 text-decoration-none small">
+              <i class="bi bi-arrow-left me-1"></i> Seguir comprando
+            </a>
+
+            <div class="mt-4 pt-3 border-top text-center opacity-50 grayscale">
+               <img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg" height="20" class="mx-2">
+               <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" height="20" class="mx-2">
+            </div>
           </div>
         </div>
 
       </div>
 
       <ng-template #emptyCart>
-        <div class="text-center py-5 bg-light rounded">
-          <i class="bi bi-cart-x display-1 text-muted"></i>
-          <h3 class="mt-3">Tu carrito está vacío</h3>
-          <p class="text-muted">¡Agrega productos para comenzar!</p>
-          <button class="btn btn-success mt-3" routerLink="/">Ir a comprar</button>
+        <div class="text-center py-5">
+          <div class="mb-4">
+             <div class="bg-light rounded-circle d-inline-flex p-4">
+               <i class="bi bi-cart3 display-1 text-muted opacity-25"></i>
+             </div>
+          </div>
+          <h3 class="fw-bold text-dark mb-3">Tu carrito está vacío</h3>
+          <p class="text-muted mb-4">¿No sabes qué comprar? ¡Tenemos miles de productos frescos esperándote!</p>
+          <button class="btn btn-success btn-lg rounded-pill px-5 fw-bold shadow-sm hover-scale" routerLink="/">
+            Empezar a comprar
+          </button>
         </div>
       </ng-template>
 
     </div>
-  `
+  `,
+  styles: [`
+    .hover-scale:hover { transform: translateY(-2px); }
+    .grayscale { filter: grayscale(100%); }
+  `]
 })
 export class CartPageComponent {
   storeService = inject(StoreService);
 
+  contarItems() {
+    return this.storeService.carrito().reduce((acc: number, item: any) => acc + (item.cantidadCarrito || 1), 0);
+  }
+
   obtenerPrecioUnitario(item: any): number {
     return (item.precioOferta && item.precioOferta < item.precio) ? item.precioOferta : item.precio;
   }
+
+  tieneDescuento(item: any): boolean {
+    return !!item.precioOferta && item.precioOferta < item.precio;
+  }
+
+  calcularAhorro(item: any): number {
+    if (!this.tieneDescuento(item)) return 0;
+    return item.precio - item.precioOferta;
+  }
+
+  // Calcula el ahorro total de todo el carrito
+  totalAhorrado = computed(() => {
+    return this.storeService.carrito().reduce((acc: number, item: any) => {
+      const ahorroUnitario = this.tieneDescuento(item) ? (item.precio - item.precioOferta) : 0;
+      return acc + (ahorroUnitario * (item.cantidadCarrito || 1));
+    }, 0);
+  });
 
   cambiarCantidad(id: string, val: number) {
     this.storeService.actualizarCantidadId(id, val);
   }
 
   eliminar(index: number) {
-    this.storeService.eliminarProducto(index);
+    if(confirm('¿Eliminar producto del carrito?')) {
+      this.storeService.eliminarProducto(index);
+    }
   }
 }
