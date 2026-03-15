@@ -1,4 +1,4 @@
-import { Injectable, signal, computed, inject, effect } from '@angular/core';
+import { Injectable, signal, computed, inject, effect, Injector, runInInjectionContext } from '@angular/core';
 import { Producto } from '../models/product.model';
 import { Firestore, collection, collectionData, doc, setDoc, deleteDoc, addDoc, updateDoc, query, where } from '@angular/fire/firestore';
 import { AuthService } from './auth.service';
@@ -15,6 +15,9 @@ export class StoreService {
   private firestore = inject(Firestore);
   private authService = inject(AuthService);
   private router = inject(Router);
+  
+  // NUEVO: Inyectamos el contexto de Angular para que no corte la conexión
+  private injector = inject(Injector);
 
   // --- 1. STATE (SIGNALS) ---
   productos = signal<Producto[]>([]);
@@ -45,15 +48,12 @@ export class StoreService {
     });
   }
   
-
   // --- 3. COMPUTED LOGIC (FILTERS & TOTALS) ---
 
-  // Smart Price Limits for Slider
   limitesPrecio = computed(() => {
     const categoria = this.categoriaSeleccionada();
     const busqueda = this.terminoBusqueda().toLowerCase();
     
-    // Calculate limits based on available products (ignoring current price filter)
     const productosBase = this.productos().filter(p => {
       const matchCategoria = categoria === 'Todos' || p.categoria === categoria;
       const matchBusqueda = p.nombre.toLowerCase().includes(busqueda) || (p.marca && p.marca.toLowerCase().includes(busqueda));
@@ -70,7 +70,6 @@ export class StoreService {
     };
   });
 
-  // Master Filter
   productosFiltrados = computed(() => {
     const categoria = this.categoriaSeleccionada();
     const busqueda = this.terminoBusqueda().toLowerCase();
@@ -111,20 +110,30 @@ export class StoreService {
   });
 
   // --- 4. DATA LOADING ACTIONS ---
+  // AHORA PROTEGIDAS CON runInInjectionContext
+  
   cargarProductosDesdeBD() {
-    const col = collection(this.firestore, 'products');
-    (collectionData(col, { idField: 'id' }) as Observable<any[]>).subscribe(data => this.productos.set(data));
-  }
-  cargarCategorias() {
-    const col = collection(this.firestore, 'categories');
-    (collectionData(col, { idField: 'id' }) as Observable<any[]>).subscribe(data => {
-      this.categorias.set(data.sort((a, b) => a.nombre.localeCompare(b.nombre)));
+    runInInjectionContext(this.injector, () => {
+      const col = collection(this.firestore, 'products');
+      (collectionData(col, { idField: 'id' }) as Observable<any[]>).subscribe(data => this.productos.set(data));
     });
   }
+
+  cargarCategorias() {
+    runInInjectionContext(this.injector, () => {
+      const col = collection(this.firestore, 'categories');
+      (collectionData(col, { idField: 'id' }) as Observable<any[]>).subscribe(data => {
+        this.categorias.set(data.sort((a, b) => a.nombre.localeCompare(b.nombre)));
+      });
+    });
+  }
+
   cargarMarcas() {
-    const col = collection(this.firestore, 'brands');
-    (collectionData(col, { idField: 'id' }) as Observable<any[]>).subscribe(data => {
-      this.marcas.set(data.sort((a, b) => a.nombre.localeCompare(b.nombre)));
+    runInInjectionContext(this.injector, () => {
+      const col = collection(this.firestore, 'brands');
+      (collectionData(col, { idField: 'id' }) as Observable<any[]>).subscribe(data => {
+        this.marcas.set(data.sort((a, b) => a.nombre.localeCompare(b.nombre)));
+      });
     });
   }
   
@@ -159,7 +168,7 @@ export class StoreService {
   async agregarOpcion(c: 'categories'|'brands', n: string) { await addDoc(collection(this.firestore, c), { nombre: n }); }
   async borrarOpcion(c: 'categories'|'brands', id: string) { await deleteDoc(doc(this.firestore, `${c}/${id}`)); }
 
-  // --- 6. UI ACTIONS (FILTERS) - THIS WAS MISSING ---
+  // --- 6. UI ACTIONS (FILTERS) ---
   
   cambiarCategoria(c: string) { 
     this.categoriaSeleccionada.set(c); 
@@ -167,7 +176,6 @@ export class StoreService {
     this.precioMaxSlider.set(null); 
   }
 
-  // >>> THIS FUNCTION WAS MISSING AND CAUSED THE ERROR <<<
   actualizarFiltroPrecio(val: number) {
     this.precioMaxSlider.set(val);
   }
@@ -232,14 +240,18 @@ export class StoreService {
   }
 
   obtenerOrdenes() {
-    const col = collection(this.firestore, 'orders');
-    return collectionData(col, { idField: 'id' }) as Observable<any[]>;
+    return runInInjectionContext(this.injector, () => {
+      const col = collection(this.firestore, 'orders');
+      return collectionData(col, { idField: 'id' }) as Observable<any[]>;
+    });
   }
 
   obtenerMisPedidos(uid: string) {
-    const col = collection(this.firestore, 'orders');
-    const q = query(col, where('usuarioId', '==', uid));
-    return collectionData(q, { idField: 'id' }) as Observable<any[]>;
+    return runInInjectionContext(this.injector, () => {
+      const col = collection(this.firestore, 'orders');
+      const q = query(col, where('usuarioId', '==', uid));
+      return collectionData(q, { idField: 'id' }) as Observable<any[]>;
+    });
   }
 
   async actualizarEstadoOrden(id: string, nuevoEstado: string) {
@@ -261,32 +273,34 @@ export class StoreService {
 
   // --- 9. FAVORITES ---
   obtenerFavoritosDeUsuario(uid: string) {
-    const favCollection = collection(this.firestore, `users/${uid}/favorites`);
-    return collectionData(favCollection, { idField: 'id' }) as Observable<{id: string}[]>;
+    return runInInjectionContext(this.injector, () => {
+      const favCollection = collection(this.firestore, `users/${uid}/favorites`);
+      return collectionData(favCollection, { idField: 'id' }) as Observable<{id: string}[]>;
+    });
   }
+
   cargarFavoritos(uid: string) {
-    const favCollection = collection(this.firestore, `users/${uid}/favorites`);
-    (collectionData(favCollection, { idField: 'id' }) as Observable<{id: string}[]>)
-      .subscribe(data => { this.favoritos.set(data.map(item => item.id)); });
+    runInInjectionContext(this.injector, () => {
+      const favCollection = collection(this.firestore, `users/${uid}/favorites`);
+      (collectionData(favCollection, { idField: 'id' }) as Observable<{id: string}[]>)
+        .subscribe(data => { this.favoritos.set(data.map(item => item.id)); });
+    });
   }
+
   async toggleFavorito(p: Producto) {
     const u = this.authService.currentUser();
     if (!u) { alert('Inicia sesión'); this.router.navigate(['/login']); return; }
     const docRef = doc(this.firestore, `users/${u.uid}/favorites/${p.id}`);
     if (this.esFavorito(p.id!)) await deleteDoc(docRef); else await setDoc(docRef, { fecha: new Date() });
   }
+
   esFavorito(id: string|number) { return this.favoritos().includes(id.toString()); }
-  // --- SUBIR IMAGEN A FIREBASE STORAGE ---
+  
+  // --- SUBIR IMAGEN ---
   async subirImagen(file: File): Promise<string> {
-    // Creamos una ruta única para que no se sobreescriban fotos con el mismo nombre
     const ruta = `productos/${Date.now()}_${file.name}`;
     const referencia = ref(this.storage, ruta);
-    
-    // Subimos el archivo
     await uploadBytes(referencia, file);
-    
-    // Obtenemos la URL pública generada
-    const urlPublica = await getDownloadURL(referencia);
-    return urlPublica;
+    return await getDownloadURL(referencia);
   }
 }
