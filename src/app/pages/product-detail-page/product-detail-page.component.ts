@@ -81,13 +81,15 @@ export class ProductDetailPageComponent {
   storeService = inject(StoreService);
 
   producto = signal<any>(null);
-  numeroWhatsapp = '51999999999'; // CAMBIA ESTO AL NÚMERO DE TU MAMÁ
+  numeroWhatsapp = '51921718961';
 
   constructor() {
     effect(() => {
-      const slug = this.route.snapshot.paramMap.get('slug');
-      if (slug && this.storeService.productos().length > 0) {
-        const encontrado = this.storeService.productos().find(p => p.slug === slug || p.id === slug);
+      // Obtenemos el parámetro de la URL (que ahora siempre será un ID)
+      const idProducto = this.route.snapshot.paramMap.get('slug'); 
+      if (idProducto && this.storeService.productos().length > 0) {
+        // CAMBIO PRINCIPAL: Busca estrictamente por p.id
+        const encontrado = this.storeService.productos().find(p => p.id === idProducto);
         if (encontrado) this.producto.set(encontrado);
       }
     });

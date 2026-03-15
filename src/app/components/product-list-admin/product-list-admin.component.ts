@@ -20,7 +20,8 @@ import { Producto } from '../../models/product.model';
         
         <div class="input-group input-group-sm" style="max-width: 250px;">
            <span class="input-group-text bg-light border-end-0"><i class="bi bi-search text-muted"></i></span>
-           <input type="text" class="form-control bg-light border-start-0 ps-0" placeholder="Buscar producto..." [(ngModel)]="filtroTexto">
+           <input type="text" class="form-control bg-light border-start-0 ps-0" placeholder="Buscar producto..." 
+                  [ngModel]="filtroTexto()" (ngModelChange)="filtroTexto.set($event)">
         </div>
       </div>
 
@@ -59,11 +60,13 @@ import { Producto } from '../../models/product.model';
               </td>
               
               <td>
-                 <div class="input-group input-group-sm" style="width: 110px;">
+                 <div class="input-group input-group-sm" style="width: 120px;">
                     <button class="btn btn-outline-secondary" (click)="cambiarStock(p, -1)" [disabled]="(p.stock || 0) <= 0">-</button>
-                    <input type="text" class="form-control text-center fw-bold" 
+                    <input type="number" class="form-control text-center fw-bold px-1" 
                            [class.text-danger]="(p.stock || 0) === 0"
-                           [value]="p.stock || 0" readonly>
+                           [value]="p.stock || 0" 
+                           min="0"
+                           (change)="cambiarStockDirecto(p, $event)">
                     <button class="btn btn-outline-secondary" (click)="cambiarStock(p, 1)">+</button>
                  </div>
               </td>
@@ -82,7 +85,7 @@ import { Producto } from '../../models/product.model';
 
             <tr *ngIf="productosFiltrados().length === 0">
                <td colspan="5" class="text-center py-4 text-muted">
-                  No se encontraron productos.
+                  No se encontraron productos con ese nombre.
                </td>
             </tr>
           </tbody>
@@ -104,7 +107,7 @@ import { Producto } from '../../models/product.model';
                <img [src]="productoEditando.imagen" class="rounded border bg-white me-3 object-fit-contain shadow-sm" style="width: 70px; height: 70px;">
                <div>
                   <h6 class="fw-bold mb-0 text-dark">{{ productoEditando.nombre }}</h6>
-                  <span class="badge bg-success mt-1">Stock: {{ productoEditando.stock }}</span>
+                  <span class="badge bg-success mt-1">Stock actual: {{ productoEditando.stock }}</span>
                </div>
             </div>
 
@@ -167,16 +170,21 @@ import { Producto } from '../../models/product.model';
   styles: [`
     .hover-scale { transition: transform 0.2s ease; }
     .hover-scale:hover { transform: translateY(-2px); }
+    /* Para quitar las flechitas feas que a veces salen en los inputs type="number" */
+    input[type=number]::-webkit-inner-spin-button, 
+    input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
   `]
 })
 export class ProductListAdminComponent {
   storeService = inject(StoreService);
   
   productoEditando: any = {}; 
-  filtroTexto = '';
+  
+  // AHORA EL FILTRO ES UN "SIGNAL" (Actualiza en tiempo real)
+  filtroTexto = signal('');
 
   productosFiltrados = computed(() => {
-    const texto = this.filtroTexto.toLowerCase();
+    const texto = this.filtroTexto().toLowerCase();
     const todos = this.storeService.productos();
     if (!texto) return todos;
     return todos.filter(p => p.nombre.toLowerCase().includes(texto) || (p.marca && p.marca.toLowerCase().includes(texto)));
@@ -201,6 +209,7 @@ export class ProductListAdminComponent {
     }
   }
 
+  // Stock con botones + y -
   async cambiarStock(p: Producto, cantidad: number) {
     if (p.id) {
       const nuevoStock = (p.stock || 0) + cantidad;
@@ -210,7 +219,21 @@ export class ProductListAdminComponent {
     }
   }
 
-  // --- NUEVA FUNCIÓN: Agregar marca o categoría sin salir del modal ---
+  // NUEVA FUNCIÓN: Stock escrito a mano en el cuadrito
+  async cambiarStockDirecto(p: Producto, event: any) {
+    if (p.id) {
+      let nuevoStock = parseInt(event.target.value, 10);
+      
+      // Validamos que sea un número válido y no sea negativo
+      if (isNaN(nuevoStock) || nuevoStock < 0) {
+        nuevoStock = 0;
+        event.target.value = 0; // Corrige visualmente si escriben letras o negativos
+      }
+
+      await this.storeService.actualizarProducto(p.id, { ...p, stock: nuevoStock });
+    }
+  }
+
   agregarRapido(tipo: 'categories' | 'brands') {
     const nombreItem = tipo === 'categories' ? 'Categoría' : 'Marca';
     const nuevoValor = prompt(`Ingresa el nombre de la nueva ${nombreItem}:`);
@@ -219,7 +242,6 @@ export class ProductListAdminComponent {
       const valorLimpio = nuevoValor.trim();
       this.storeService.agregarOpcion(tipo, valorLimpio);
       
-      // Auto-seleccionar el nuevo valor en el formulario que se está editando
       if (tipo === 'categories') {
         this.productoEditando.categoria = valorLimpio;
       } else {

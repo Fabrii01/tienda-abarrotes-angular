@@ -18,14 +18,14 @@ import { RouterLink } from '@angular/router';
              <span *ngIf="item.stock === 0" class="badge bg-secondary rounded-pill shadow-sm px-2 py-1" style="font-size: 0.65rem;">AGOTADO</span>
           </div>
 
-          <div class="img-wrapper p-2 p-md-4 d-flex align-items-center justify-content-center bg-white cursor-pointer" [routerLink]="['/producto', item.slug || item.id]">
+          <div class="img-wrapper p-2 p-md-4 d-flex align-items-center justify-content-center bg-white cursor-pointer" [routerLink]="['/producto', item.id]">
              <img [src]="item.imagen" class="img-fluid object-fit-contain product-img transition-transform" [class.grayscale]="item.stock === 0" alt="{{ item.nombre }}">
           </div>
           
           <div class="card-body p-2 p-md-3 d-flex flex-column border-top border-light">
             <div class="mb-1 mb-md-2">
                <small class="text-uppercase fw-bold text-muted d-block text-truncate" style="font-size: 0.65rem;">{{ item.marca || 'Fatahi' }}</small>
-               <h6 class="card-title fw-bold text-dark mb-1 text-truncate-2 lh-sm cursor-pointer hover-text-primary product-title" [routerLink]="['/producto', item.slug || item.id]">
+               <h6 class="card-title fw-bold text-dark mb-1 text-truncate-2 lh-sm cursor-pointer hover-text-primary product-title" [routerLink]="['/producto', item.id]">
                    {{ item.nombre }}
                </h6>
             </div>
@@ -68,14 +68,12 @@ import { RouterLink } from '@angular/router';
     .text-truncate-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; height: 2.4em; }
     .hover-text-primary:hover { color: #198754 !important; }
 
-    /* ESTILOS RESPONSIVOS: Celular por defecto, PC en @media */
     .img-wrapper { height: 140px; }
     .product-title { font-size: 0.85rem; }
     .product-price { font-size: 1.1rem; }
     .stock-badge { font-size: 0.65rem; padding: 0.25rem 0.5rem; align-self: flex-start; }
     .whatsapp-btn { font-size: 0.85rem; }
 
-    /* A partir de pantallas medianas (Tablets y PC) crecen los elementos */
     @media (min-width: 768px) {
       .img-wrapper { height: 220px; }
       .product-title { font-size: 1rem; }
@@ -87,8 +85,6 @@ import { RouterLink } from '@angular/router';
 })
 export class ProductListComponent {
   storeService = inject(StoreService);
-
-  // AQUÍ CAMBIAS EL NÚMERO DE TU MAMÁ
   numeroWhatsapp = '51921718961'; 
 
   generarLinkWhatsapp(producto: Producto): string {
