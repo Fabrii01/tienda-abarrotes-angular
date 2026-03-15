@@ -3,11 +3,13 @@ import { provideRouter } from '@angular/router';
 import { routes } from './app.routes';
 
 // IMPORTS DE FIREBASE
-import { provideFirebaseApp, initializeApp } from '@angular/fire/app';
+import { provideFirebaseApp, initializeApp, getApp } from '@angular/fire/app'; // <--- Se añadió getApp
 import { provideAuth, getAuth } from '@angular/fire/auth';
-import { provideFirestore, getFirestore } from '@angular/fire/firestore'; // <--- 1. IMPORTAR ESTO
-import { environment } from '../environments/environment';
 import { provideStorage, getStorage } from '@angular/fire/storage';
+
+// 1. NUEVOS IMPORTS DE FIRESTORE PARA EL CACHÉ
+import { provideFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from '@angular/fire/firestore'; 
+import { environment } from '../environments/environment';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -17,12 +19,17 @@ export const appConfig: ApplicationConfig = {
     // Inicializar Firebase
     provideFirebaseApp(() => initializeApp(environment.firebase)),
     
-    // Proveer Autenticación
+    // Proveer Autenticación y Storage
     provideAuth(() => getAuth()),
     provideStorage(() => getStorage()),
 
-    // 2. AGREGAR ESTA LÍNEA (Es la que suele faltar y causa la pantalla blanca)
-    provideFirestore(() => getFirestore()) 
+    // 2. AQUÍ ESTÁ LA MAGIA: Inicializamos Firestore con Caché Persistente
+    provideFirestore(() => {
+      const app = getApp();
+      return initializeFirestore(app, {
+        localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+      });
+    }) 
     
   ]
 };
