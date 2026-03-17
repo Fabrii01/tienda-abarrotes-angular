@@ -27,9 +27,10 @@ export const appConfig: ApplicationConfig = {
     provideFirestore(() => {
       const app = getApp();
       return initializeFirestore(app, {
-        localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+        localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
+        experimentalForceLongPolling: true // <--- ¡NUEVO ESCUDO ANTI 404/400!
       });
-    }) 
+    })
     
   ]
 };
